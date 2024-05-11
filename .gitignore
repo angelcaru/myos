@@ -1,0 +1,8 @@
+bin/
+iso_root/
+limine/
+obj/
+image.iso
+src/font-data.h
+meta/build/
+

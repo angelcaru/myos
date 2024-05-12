@@ -4,8 +4,11 @@
 #include <limine.h>
 
 #include "font.h"
+#include "idt.h"
  
 #include "limine-junk.h"
+
+void do_int(void);
 
 // Halt and catch fire function.
 static void hcf(void) {
@@ -14,6 +17,16 @@ static void hcf(void) {
         asm ("hlt");
     }
 }
+
+volatile bool flag = false;
+
+__attribute__((noreturn))
+void exception_handler(void);
+void exception_handler(void) {
+    flag = true;
+}
+
+static IDT idt;
 
 // The following will be our kernel's entry point.
 // If renaming _start() to something else, make sure to change the
@@ -41,6 +54,8 @@ void _start(void) {
         .stride = framebuffer->pitch / 4,
     };
 
+    idt_init(idt);
+
 #define LINE_CAP 1024
     static char line[LINE_CAP] = {0};
     static size_t line_sz = 0;
@@ -57,6 +72,10 @@ void _start(void) {
         uint32_t color = i < TIME_FACTOR ? 0xFFFFFFFF : 0x00000000;
         draw_rect(canvas, x, 0, GLYPH_WIDTH * scale, GLYPH_HEIGHT * scale, color);
         i++;
+
+        if (i == 500) do_int();
+
+        if (flag) line[line_sz++] = '$';
 
         if (i >= TIME_FACTOR) i = 0;
     }

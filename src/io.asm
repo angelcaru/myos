@@ -4,22 +4,21 @@ bits 64
 global %1
 %1:
     xor rax, rax
-    push rdi
     push rdx
+    mov rdx, rdi
     in %2, dx
     pop rdx
-    pop rdi
     ret
 %endmacro
 
 %macro OUTFN 2
 global %1
 %1:
-    push rdi
     push rdx
+    mov rdx, rdi
+    mov rax, rsi
     out dx, %2
     pop rdx
-    pop rdi
     ret
 %endmacro
 

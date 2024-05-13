@@ -8,8 +8,6 @@
  
 #include "limine-junk.h"
 
-void do_int(void);
-
 // Halt and catch fire function.
 static void hcf(void) {
     asm ("cli");
@@ -18,12 +16,8 @@ static void hcf(void) {
     }
 }
 
-volatile bool flag = false;
-
 __attribute__((noreturn))
-void exception_handler(void);
 void exception_handler(void) {
-    flag = true;
 }
 
 static IDT idt;
@@ -61,9 +55,19 @@ void _start(void) {
     static size_t line_sz = 0;
 
 #define TIME_FACTOR 1000
+    __asm__("int3");
 
-    line[line_sz++] = '>';
-    line[line_sz++] = ' ';
+    bool serial_works = false;
+    if (!serial_init()) {
+        line[line_sz++] = 'E';
+        line[line_sz++] = 'R';
+        line[line_sz++] = 'R';
+        line[line_sz++] = '!';
+    } else {
+        line[line_sz++] = '>';
+        line[line_sz++] = ' ';
+        serial_works = true;
+    }
 
     int i = 0;
     while (1) {
@@ -73,11 +77,11 @@ void _start(void) {
         draw_rect(canvas, x, 0, GLYPH_WIDTH * scale, GLYPH_HEIGHT * scale, color);
         i++;
 
-        if (i == 500) do_int();
-
-        if (flag) line[line_sz++] = '$';
-
-        if (i >= TIME_FACTOR) i = 0;
+        if (i >= TIME_FACTOR) {
+            i = 0;
+            const char msg[] = "Setting i to 0...\n";
+            if (serial_works) serial_print(msg, sizeof(msg)-1);
+        }
     }
 }
 

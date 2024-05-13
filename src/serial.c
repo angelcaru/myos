@@ -41,3 +41,39 @@ void serial_print(const char *text, size_t len) {
     }
 }
 
+int serial_received(void) {
+   return in8(PORT + 5) & 1;
+}
+ 
+char serial_read_char(void) {
+   while (!serial_received());
+ 
+   return in8(PORT);
+}
+
+void serial_print_int(int num) {
+    char buf[15];
+    size_t buf_sz = 0;
+
+    if (num < 0) {
+        serial_write_char('-');
+        serial_print_int(-num);
+        return;
+    }
+
+    while (num > 0) {
+        buf[buf_sz++] = (num % 10) + '0';
+        num /= 10;
+    }
+    while (buf_sz > 0) {
+        serial_write_char(buf[--buf_sz]);
+    }
+}
+
+void serial_print_cstr(const char *cstr) {
+    while (*cstr != '\0') {
+        serial_write_char(*cstr);
+        cstr++;
+    }
+}
+

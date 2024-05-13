@@ -5,6 +5,7 @@
 
 #include "font.h"
 #include "idt.h"
+#include "serial.h"
  
 #include "limine-junk.h"
 
@@ -16,7 +17,6 @@ static void hcf(void) {
     }
 }
 
-__attribute__((noreturn))
 void exception_handler(void) {
 }
 
@@ -71,16 +71,24 @@ void _start(void) {
 
     int i = 0;
     while (1) {
-        size_t scale = 2;
+        size_t scale = 1;
         size_t x = draw_text(canvas, 0, 0, scale, line, line_sz);
         uint32_t color = i < TIME_FACTOR ? 0xFFFFFFFF : 0x00000000;
         draw_rect(canvas, x, 0, GLYPH_WIDTH * scale, GLYPH_HEIGHT * scale, color);
         i++;
 
-        if (i >= TIME_FACTOR) {
-            i = 0;
-            const char msg[] = "Setting i to 0...\n";
-            if (serial_works) serial_print(msg, sizeof(msg)-1);
+        if (serial_works && serial_received()) {
+            char ch = serial_read_char();
+
+            serial_print_cstr("[LOG] read character '");
+            serial_print_int(ch);
+            serial_print_cstr("'\n");
+
+            if (ch == 127) { // NOTE: backspace is 127 for some reason
+                line_sz--;
+            } else {
+                line[line_sz++] = ch;
+            }
         }
     }
 }
